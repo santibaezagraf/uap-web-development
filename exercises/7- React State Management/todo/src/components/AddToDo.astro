@@ -1,3 +1,6 @@
+---
+const { filter = '"all'} = Astro.props; // Get the filter parameter from the props, default to "all"
+---
   <form id="add-todo" action="/api/todos" method="POST" class="flex items-center bg-[rgba(241,236,230,255)] my-6 rounded-full w-1/2 p-0">
     <input type="text" name="text" id="input-todo" placeholder="What do you need to do?" required class="flex-grow bg-transparent border-0 font-montserrat text-lg p-3 ml-2 focus:outline-none" />
     <button type="submit" id="add-todo-btn" name="action" value="add" class="flex-shrink-0 bg-[rgb(116,178,202)] border-0 text-white text-2xl rounded-r-full py-3 px-5 cursor-pointer">ADD</button>
@@ -18,7 +21,11 @@
       if (text === "") return; // If the input is empty, do nothing
 
       try {
-        const response = await fetch("/api/todos", {
+        // const filter = new URLSearchParams(window.location.search).get("filter") || "";
+        // console.log("Filter:", filter); // Log the filter for debugging
+        // const response = await fetch(`/api/todos${filter ? `?filter=${encodeURIComponent(filter)}` : ""}`, {
+
+        const response = await fetch("/api/todos/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

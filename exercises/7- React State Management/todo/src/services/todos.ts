@@ -1,63 +1,189 @@
-import type { TodoItem } from '../types';
+import type { TodoItem, Board } from '../types';
 
 let currentId = 5;
+let boardId = 1;
 
-const generateId = () => {
+const generateTodoId = () => {
     return ++currentId;
 }
 
-const todos: TodoItem[] = [
-    { id: 1, text: 'Aprender React', completed: false },
-    { id: 2, text: 'Hacer la compra', completed: true },
-    { id: 3, text: 'Limpiar la casa', completed: false },
-    { id: 4, text: 'Estudiar para el examen', completed: true },
-    { id: 5, text: 'Hacer ejercicio', completed: false },
-];
-
-export const addTodo = (text: string) => {
-    const newTodo: TodoItem = { id: generateId(), text, completed: false };
-    todos.push(newTodo);
-    return newTodo;
+const generateBoardId = () => {
+    return ++boardId;
 }
 
-export const toggleTodo = (id: number) => {
-    const todo = todos.find(todo => todo.id === id);
+const boards: Board[] = [
+    {
+        id: 1,
+        name: "Personal",
+        createdAt: new Date(),
+        todos: [
+            { id: 1, text: 'Aprender React', completed: false},
+            { id: 2, text: 'Hacer la compra', completed: true},
+            { id: 3, text: 'Limpiar la casa', completed: false},
+            { id: 4, text: 'Estudiar para el examen', completed: true},
+            { id: 5, text: 'Hacer ejercicio', completed: false},
+        ]
+    }
+]
+
+// FUNCIONES BOARD
+
+export const getBoards = () => {
+    return boards;  
+}
+
+export const getBoard = (id: number) => {
+    return boards.find(board => board.id === id);
+}
+
+export const addBoard = (name: string) => {
+    const newBoard: Board = { id: generateBoardId(), name, createdAt: new Date(), todos: [] };
+    boards.push(newBoard);
+}
+
+export const deleteBoard = (id: number) => {
+    const index = boards.findIndex(board => board.id === id);
+    if (index !== -1) {
+        boards.splice(index, 1);
+    }
+}
+
+export const editBoard = (id: number, name: string) => {
+    const board = getBoard(id);
+    if (board) {
+        board.name = name;
+    } else {
+        console.error("Board not found!");
+        return;
+    }
+}
+
+// FUNCIONES TODO
+
+export const addTodo = (boardId: number, text: string) => {
+    const board = getBoard(boardId);
+    if (!board) {
+        console.error("Board not found!");
+        return;
+    }
+
+    const newTodo: TodoItem = { id: generateTodoId(), text, completed: false };
+    board.todos.push(newTodo);
+}
+
+export const toggleTodo = (boardId: number, id: number) => {
+    const board = getBoard(boardId);
+    if (!board) {
+        console.error("Board not found!");
+        return;
+    }
+
+    const todo = board.todos.find(todo => todo.id === id);
     if (todo) {
         todo.completed = !todo.completed;
     }
 }
 
-export const editTodo = (id: number, text: string) => {
-    const todo = todos.find(todo => todo.id === id);
+export const deleteTodo = (boardId: number, id: number) => {
+    const board = getBoard(boardId);
+    if (!board) {
+        console.error("Board not found!");
+        return;
+    }
+
+    const index = board.todos.findIndex(todo => todo.id === id);
+    board.todos.splice(index, 1);
+}
+
+export const editTodo = (boardId: number, text: string, id: number) => {
+    const board = getBoard(boardId);
+    if (!board) {
+        console.error("Board not found!");
+        return;
+    }
+
+    const todo = board.todos.find(todo => todo.id === id);
     if (todo) {
         todo.text = text;
+    } else {
+        console.log("Todo not found!")
     }
-    return todo;
 }
 
-export const deleteTodo = (id: number) => {
-    console.log("Deleting todo with id:", id);
-    const index = todos.findIndex(todo => todo.id === id);
-    todos.splice(index, 1);
+export const clearCompletedTodos = (boardId: number) => {
+    const board = getBoard(boardId);
+    if (!board) {
+        console.error("Board not found!");
+        return;
+    }
+
+    const remainingTodos = board.todos.filter(todo => !todo.completed);
+    board.todos.length = 0;
+    board.todos.push(...remainingTodos);
 }
 
-export const clearCompletedTodos = () => {
-    const remainingTodos = todos.filter(todo => !todo.completed);
-    todos.length = 0;
-    todos.push(...remainingTodos);
-}
+export const getFilteredTodos = (boardId: number, filter: string): TodoItem[] => {
+    const board = getBoard(boardId);
+    if (!board) {
+        console.error("Board not found!");
+        return [];
+    }
 
-export const getFilteredTodos = (filter: string) => {
     switch (filter) {
         case 'all':
-            return todos;
+            return board.todos;
         case 'uncompleted':
-            return todos.filter(todo => !todo.completed);
+            return board.todos.filter(todo => !todo.completed);
         case 'completed':
-            return todos.filter(todo => todo.completed);
+            return board.todos.filter(todo => todo.completed);
         default:
-            return todos;
+            return board.todos;
     }
+}
+
+export function getPaginatedTodos(boardId: number, filter: string, page: number, limit: number) {
+    const board = getBoard(boardId);
+    if (!board) {
+        console.error("Board not found!");
+        return {
+            todos: [],
+            pagination: {
+                currentPage: 1,
+                itemsPerPage: limit,
+                totalItems: 0,
+                totalPages: 1
+            }
+        };
+    }
+
+  // 1. Obtener las tareas filtradas
+  const filteredTodos = getFilteredTodos(boardId, filter);
+  
+  // 2. Calcular metadatos de paginación
+  const totalItems = filteredTodos.length;
+  const totalPages = Math.ceil(totalItems / limit);
+    // Asegurarse de que la página solicitada no exceda el número total de páginas
+    page = Math.max(1, Math.min(page, totalPages));
+    // if (page > totalPages) {
+    //     page = 1;
+    // }
+    
+  
+  // 3. Obtener subconjunto de tareas para la página actual
+  const startIndex = (page - 1) * limit;
+  const endIndex = Math.min(startIndex + limit, totalItems);
+  const paginatedTodos = filteredTodos.slice(startIndex, endIndex);
+  
+  // 4. Devolver tanto los datos como los metadatos de paginación
+  return {
+    todos: paginatedTodos,
+    pagination: {
+      currentPage: page,
+      itemsPerPage: limit,
+      totalItems,
+      totalPages: totalPages > 0 ? totalPages : 1 // Asegurarse de que siempre haya al menos una página 
+    }
+  };
 }
 
 

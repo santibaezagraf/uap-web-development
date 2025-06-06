@@ -1,59 +1,114 @@
-import { usePaginationStore } from '../store/todoStore';
 
-export function Pagination({ totalItems }: { totalItems: number }) {
-  const { currentPage, itemsPerPage, setCurrentPage } = usePaginationStore();
-  
-  // Calculate total pages
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  
-  // If there's only one page, don't render the pagination
-  if (totalPages <= 1) return null;
-  
-  // Generate array of page numbers
-  const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
-  
-  return (
-    <div className="flex justify-center gap-2 my-4">
-      {/* Previous page button */}
-      <button
-        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-        disabled={currentPage === 1}
-        className={`px-3 py-1 rounded ${
-          currentPage === 1
-            ? 'opacity-50 cursor-not-allowed'
-            : 'bg-orange-500 text-white hover:bg-orange-600'
-        }`}
-      >
-        &lt;
-      </button>
-      
-      {/* Page numbers */}
-      {pageNumbers.map(number => (
-        <button
-          key={number}
-          onClick={() => setCurrentPage(number)}
-          className={`px-3 py-1 rounded ${
-            currentPage === number
-              ? 'bg-orange-500 text-white'
-              : 'bg-gray-200 hover:bg-gray-300'
-          }`}
-        >
-          {number}
-        </button>
-      ))}
-      
-      {/* Next page button */}
-      <button
-        onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-        disabled={currentPage === totalPages}
-        className={`px-3 py-1 rounded ${
-          currentPage === totalPages
-            ? 'opacity-50 cursor-not-allowed'
-            : 'bg-orange-500 text-white hover:bg-orange-600'
-        }`}
-      >
-        &gt;
-      </button>
-    </div>
-  );
+
+interface PaginationProps {
+    currentPage: number;
+    totalPages: number;
+    onPageChange: (page: number) => void;
 }
+
+export function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) {
+
+    const handlePageChange = (page: number) => {
+        if (page < 1 || page > totalPages) return;
+        onPageChange(page);
+    }
+
+    return (
+        <div className="pagination flex items-center justify-center gap-2 mt-4">
+            <button 
+                onClick={() => handlePageChange(1)} 
+                disabled={currentPage === 1}
+                className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+            >
+                First
+            </button>
+            <button 
+                onClick={() => handlePageChange(currentPage - 1)} 
+                disabled={currentPage === 1}
+                className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+            >
+                Previous
+            </button>
+            <span className="mx-2">
+                Page {currentPage} of {totalPages}
+            </span>
+            <button 
+                onClick={() => handlePageChange(currentPage + 1)} 
+                disabled={currentPage === totalPages}
+                className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+            >
+                Next
+            </button>
+            <button 
+                onClick={() => handlePageChange(totalPages)} 
+                disabled={currentPage === totalPages}
+                className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+            >
+                Last
+            </button>
+        </div>
+    );
+}
+
+
+
+
+
+
+
+// import { usePagination } from '../context/PaginationContext';
+
+
+// // interface PaginationProps {
+// //     currentPage: number;
+// //     totalPages: number;
+// //     onPageChange: (page: number) => void;
+// // }
+
+// export function Pagination() { //{ currentPage, totalPages, onPageChange }: PaginationProps
+
+//     const { currentPage, setCurrentPage, totalPages } = usePagination();
+
+//     const handlePageChange = (page: number) => {
+//         if (page < 1 || page > totalPages) return;
+//         setCurrentPage(page);
+
+//     };
+
+//     return (
+//         <div className="pagination flex items-center justify-center gap-2 mt-4">
+//         <button 
+//             onClick={() => handlePageChange(1)} 
+//             disabled={currentPage === 1}
+//             className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+//         >
+//             First
+//         </button>
+//         <button 
+//             onClick={() => handlePageChange(currentPage - 1)} 
+//             disabled={currentPage === 1}
+//             className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+//         >
+//             Previous
+//         </button>
+//         <span className="mx-2">
+//             Page {currentPage} of {totalPages}
+//         </span>
+//         <button 
+//             onClick={() => handlePageChange(currentPage + 1)} 
+//             disabled={currentPage === totalPages}
+//             className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+//         >
+//             Next
+//         </button>
+//         <button 
+//             onClick={() => handlePageChange(totalPages)} 
+//             disabled={currentPage === totalPages}
+//             className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+//         >
+//             Last
+//         </button>
+//     </div>
+//     );
+
+// }
