@@ -59,6 +59,8 @@ export const DELETE: APIRoute = async ({ request, params, redirect }) => {
 
 export const PATCH: APIRoute = async ({ request, params, redirect }) => {
     const { boardId, todoId } = params;
+    console.log("currentBoardId:", boardId)
+    console.log("todoId:", todoId)
     if (!boardId || !todoId) {
         return new Response("Board ID and Todo ID are required", { status: 400 });
     }
@@ -71,12 +73,13 @@ export const PATCH: APIRoute = async ({ request, params, redirect }) => {
             : (await parseFromJson(await request.json()));
 
     if (!action) { return new Response("Action is required", { status: 400 }); }
-    if (!text) { return new Response("Text is required", {status: 404}) }
+    // if (!text) { return new Response("Text is required", {status: 404}) }
 
     try {
         if (action == "edit" && text) {
             editTodo(Number(boardId), text, Number(todoId))
         } else if (action == "toggle") {
+            console.log("calling toggleTodo()")
             toggleTodo(Number(boardId), Number(todoId));
         }
 

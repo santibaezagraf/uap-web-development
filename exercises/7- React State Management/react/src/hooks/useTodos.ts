@@ -8,6 +8,7 @@ export const BASE_URL = "http://localhost:4321/api";
 
 
 interface TodoQueryParams {
+  boardId?: number
   filter?: 'all' | 'completed' | 'uncompleted';
   page?: number;
   limit?: number;
@@ -22,21 +23,25 @@ export function useTodos(params: TodoQueryParams = {}) { //filter?: FilterContex
   // const filter = explicitFilter ?? useFilter().filter; // Si no se pasa un filtro explícito, usa el del contexto
 
   const reduxFilter = useAppSelector((state) => state.ui.filter); // Asumiendo que tienes un store de Redux configurado
-
+  const currentBoardId = useAppSelector((state) => state.ui.currentBoardId); // Asumiendo que tienes un store de Redux configurado
   let {
+    boardId = currentBoardId,
     filter = reduxFilter,
     page = 1, 
     limit = 7, 
     enabled = true 
   } = params;
-
-
   
+  // Obtener el intervalo de refetch desde la configuración global
+  const { refetchInterval } = useAppSelector(state => state.ui.config);
+
+
   
   return useQuery({
-    queryKey: ['todos', filter, page, limit],
+    queryKey: ['todos', boardId, filter, page, limit],
     queryFn: async () => {
-      const response = await fetch(`${BASE_URL}/todos?filter=${filter}&page=${page}&limit=${limit}`, {
+      console.log("useTodos filter:", filter)
+      const response = await fetch(`${BASE_URL}/boards/${boardId}/todos?filter=${filter}&page=${page}&limit=${limit}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -49,6 +54,8 @@ export function useTodos(params: TodoQueryParams = {}) { //filter?: FilterContex
       console.log("Todos fetched:", data);
       return data;
     },
-    enabled
+    enabled,
+    // Usar el intervalo de refetch desde la configuración global
+    refetchInterval
   });
 }

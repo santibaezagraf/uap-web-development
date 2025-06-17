@@ -35,11 +35,16 @@ const parseJson = async (
 
 export const POST: APIRoute = async ({ request, redirect }) => {
     const contentType = request.headers.get("content-type");
+    console.log("CRANDO BOARD")
 
     const { action, text} =
         contentType === "application/x-www-form-urlencoded"
             ? (await parseFormData(request))
-            : (await parseJson(await request.json()));
+            : (await parseJson(request));
+    console.log("action:", action)
+    console.log("text:", text)
+
+    let board
 
     if (!action) {
         return new Response("Action is required", { status: 400 });
@@ -47,7 +52,10 @@ export const POST: APIRoute = async ({ request, redirect }) => {
 
     try {
         if (action === 'createBoard' && text) {
-            addBoard(text)
+            console.log("doing addBoard()")
+            board = addBoard(text)
+        } else {
+            console.log("error con action o text")
         }
 
     } catch (error) {
@@ -59,7 +67,8 @@ export const POST: APIRoute = async ({ request, redirect }) => {
         return redirect(`/`); // Redirige a la página de backend
     }
     else if (contentType === "application/json") {
-        return new Response(JSON.stringify(getBoards()), { 
+        console.log(getBoards())
+        return new Response(JSON.stringify(board), { 
             status: 200,
             headers: { "Content-Type": "application/json" }
         });

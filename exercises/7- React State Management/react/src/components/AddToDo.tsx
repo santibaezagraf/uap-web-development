@@ -1,33 +1,45 @@
 import { type FormEvent, useEffect, useRef } from "react";
 import { useAddTodo, useEditTodo } from "../hooks/UseTodoMutations";
+import type { Board } from "../types";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
-import { addNotification, cancelEditing } from "../store/uiSlice";
+import { addNotification, cancelEditing, cancelCreatingBoard, setCurrentBoardId } from "../store/uiSlice";
+import { useCreateBoard } from "../hooks/useBoardMutations";
+import { useQueryClient } from "@tanstack/react-query";
 
 export function AddToDo() {
     // Obtener estado de edición
     const { isEditing, todoBeingEdited } = useAppSelector(state => state.ui.editing);
+    const isCreatingBoard = useAppSelector(state => state.ui.isCreatingBoard);
     
     // Hooks para añadir y editar tareas
-    const { mutate: addTodo, isPending: isAddPending } = useAddTodo();
+    const { mutateAsync: addTodo, isPending: isAddPending } =  useAddTodo();
     const { mutate: editTodo, isPending: isEditPending } = useEditTodo();
+    const {mutateAsync: createBoard, isPending: isBoardPending } = useCreateBoard();
     const dispatch = useAppDispatch();
+    const queryClient = useQueryClient();
     
     // Referencia al input para enfocar automáticamente
     const inputRef = useRef<HTMLInputElement>(null);
-    // Efecto para enfocar y rellenar el input cuando se inicia la edición
+    // Manejo del input al empezar la edicion o creacion de un tablero
     useEffect(() => {
         if (isEditing && inputRef.current) {
             // Establecer el texto del todo en el input
             inputRef.current.value = todoBeingEdited?.text || '';
             // Enfocar el input
             inputRef.current.focus();
+        } else if (isCreatingBoard && inputRef.current) {
+            // Vaciar el input
+            inputRef.current.value = '';
+            // Enfocar el input
+            inputRef.current.focus();
         }
-    }, [isEditing, todoBeingEdited]);
+        
+    }, [isEditing, todoBeingEdited, isCreatingBoard]);
     
     // Efecto para detectar la tecla Escape
     useEffect(() => {
-        // Solo agregar el listener cuando estemos en modo edición
-        if (isEditing) {
+        // Solo agregar el listener cuando estemos en modo edición o de creacion de un tablero
+        if (isEditing || isCreatingBoard) {
             const handleEscapeKey = (event: KeyboardEvent) => {
                 if (event.key === "Escape") {
                     handleCancelEdit();
@@ -42,9 +54,9 @@ export function AddToDo() {
                 document.removeEventListener('keydown', handleEscapeKey);
             };
         }
-    }, [isEditing]);
+    }, [isEditing, isCreatingBoard]);
 
-    function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
 
         const target = event.target as HTMLFormElement;
@@ -53,10 +65,34 @@ export function AddToDo() {
 
         if (!text.trim()) {
             dispatch(addNotification({
-                message: "Please enter a task!",
+                message: "Please enter something!",
                 type: 'warning'
             }));
             return;
+        }
+
+        if (isCreatingBoard) {
+            // Modo creación de tablero
+            try {
+                const newBoard = await createBoard(text);
+
+                dispatch(setCurrentBoardId(newBoard.id));
+                
+                dispatch(addNotification({
+                    message: "Board created successfully!",
+                    type: 'success'
+                }));
+                dispatch(cancelCreatingBoard())
+                target.reset()
+                return;
+            } catch (error) {
+                console.error("Error adding board:", error);
+                dispatch(addNotification({
+                    message: "Failed to submit. Please try again.",
+                    type: 'error'
+                }));
+            }
+            
         }
 
         if (isEditing && todoBeingEdited) {
@@ -73,14 +109,26 @@ export function AddToDo() {
             
             // Cancelar modo edición
             dispatch(cancelEditing());
+            target.reset()
+            return
         } else {
             // Modo añadir nueva tarea
-            addTodo(text);
-            
-            dispatch(addNotification({
+            try {
+                await addTodo(text);
+
+                dispatch(addNotification({
                 message: "Task added successfully!",
                 type: 'success'
-            }));
+                }));     
+                
+            } catch (error) {
+                console.error("Error adding todo:", error);
+                dispatch(addNotification({
+                    message: "Failed to submit. Please try again.",
+                    type: 'error'
+                }));
+            }       
+            
         }
         
         // Resetear el formulario
@@ -95,7 +143,18 @@ export function AddToDo() {
         }
     }
 
-    const isPending = isEditing ? isEditPending : isAddPending;
+    function handleCancelBoard() {
+        dispatch(cancelCreatingBoard())
+        if (inputRef.current) {
+            inputRef.current.value = '';
+        }
+    }
+
+    const isPending = isCreatingBoard
+        ? isBoardPending
+        : isEditing
+            ? isEditPending
+            : isAddPending;
 
     return (
         <form 
@@ -109,13 +168,14 @@ export function AddToDo() {
                 type="text" 
                 name="text" 
                 id="input-todo" 
-                placeholder={isEditing ? "Update task..." : "What do you need to do?"}
+                placeholder={isEditing ? "Update task..." : isCreatingBoard ? 
+                "Name your new board..." : "What do you need to do?"}
                 className="flex-grow bg-transparent border-0 font-montserrat text-lg p-3 ml-2 focus:outline-none" 
             />
-              {isEditing && (
+            {isEditing || isCreatingBoard && (
                 <button
                     type="button"
-                    onClick={handleCancelEdit}
+                    onClick={isEditPending ? handleCancelEdit : handleCancelBoard}
                     className="flex-shrink-0 bg-transparent text-gray py-3 px-4"
                 >
                     ✕
@@ -126,10 +186,10 @@ export function AddToDo() {
                 type="submit" 
                 id="add-todo-btn" 
                 name="action" 
-                value={isEditing ? "edit" : "add"}
+                value={isEditing ? "edit" : isCreatingBoard ? "creating" : "add"}
                 className="flex-shrink-0 bg-[rgb(116,178,202)] border-0 text-white text-2xl rounded-r-full py-3 px-5 cursor-pointer"
             >
-                {isPending ? "..." : isEditing ? "UPDATE" : "ADD"}
+                {isPending ? "..." : isEditing ? "UPDATE" : isCreatingBoard ? "CREATING" : "ADD"}
             </button>
         </form>
     );

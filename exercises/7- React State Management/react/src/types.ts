@@ -4,4 +4,11 @@ export type TodoItem = {
     completed: boolean;
 }
 
+export interface Board {
+    id: number;
+    name: string;
+    todos: TodoItem[];
+    createdAt: Date;
+}
+
 export type filterType = 'all' | 'completed' | 'uncompleted';

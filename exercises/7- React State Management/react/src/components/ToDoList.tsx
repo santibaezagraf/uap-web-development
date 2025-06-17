@@ -1,4 +1,4 @@
-import { ToDoItemWithContext } from "./ToDoItem";
+import { ToDoItem } from "./ToDoItem";
 // import { usePagination } from "../context/PaginationContext";
 import { useTodos } from "../hooks/useTodos";
 import type { TodoItem } from "../types";
@@ -90,7 +90,7 @@ export function ToDoListWithContext() { //{ currentPage, setCurrentPage }: ToDoL
         <>
             <ul className="list-none p-0 m-0">
                 {todos.map((todo: TodoItem) => (
-                    <ToDoItemWithContext
+                    <ToDoItem
                         key={todo.id}
                         todo={todo}
                     />

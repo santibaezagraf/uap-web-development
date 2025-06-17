@@ -1,7 +1,7 @@
 import type { TodoItem, Board } from '../types';
 
 let currentId = 5;
-let boardId = 1;
+let boardId = 2;
 
 const generateTodoId = () => {
     return ++currentId;
@@ -23,6 +23,18 @@ const boards: Board[] = [
             { id: 4, text: 'Estudiar para el examen', completed: true},
             { id: 5, text: 'Hacer ejercicio', completed: false},
         ]
+    },
+    {
+        id: 2,
+        name: "Profesional",
+        createdAt: new Date(),
+        todos: [
+            { id: 1, text: 'Morir en Madrid', completed: false},
+            { id: 2, text: 'Hacer un gol sacando del medio', completed: true},
+            { id: 3, text: 'Irse a la B', completed: false},
+            { id: 4, text: 'No clasificar al mundial por 3ra vez consecutiva', completed: true},
+            { id: 5, text: 'Morir en Manchester', completed: false},
+        ]
     }
 ]
 
@@ -33,12 +45,17 @@ export const getBoards = () => {
 }
 
 export const getBoard = (id: number) => {
-    return boards.find(board => board.id === id);
+    // console.log(boards)
+    // console.log("getBoard() id:", id)
+    const board = boards.find(board => board.id == id);
+    // console.log(board);
+    return board;
 }
 
 export const addBoard = (name: string) => {
     const newBoard: Board = { id: generateBoardId(), name, createdAt: new Date(), todos: [] };
     boards.push(newBoard);
+    return newBoard
 }
 
 export const deleteBoard = (id: number) => {
@@ -54,17 +71,17 @@ export const editBoard = (id: number, name: string) => {
         board.name = name;
     } else {
         console.error("Board not found!");
-        return;
+        return
     }
 }
 
 // FUNCIONES TODO
 
-export const addTodo = (boardId: number, text: string) => {
+export const addTodo = async (boardId: number, text: string) => {
     const board = getBoard(boardId);
     if (!board) {
         console.error("Board not found!");
-        return;
+        throw new Error("Board not found")
     }
 
     const newTodo: TodoItem = { id: generateTodoId(), text, completed: false };
@@ -75,7 +92,7 @@ export const toggleTodo = (boardId: number, id: number) => {
     const board = getBoard(boardId);
     if (!board) {
         console.error("Board not found!");
-        return;
+        return new Error("Board not found")
     }
 
     const todo = board.todos.find(todo => todo.id === id);
@@ -88,7 +105,7 @@ export const deleteTodo = (boardId: number, id: number) => {
     const board = getBoard(boardId);
     if (!board) {
         console.error("Board not found!");
-        return;
+        return new Error("Board not found")
     }
 
     const index = board.todos.findIndex(todo => todo.id === id);
@@ -99,7 +116,7 @@ export const editTodo = (boardId: number, text: string, id: number) => {
     const board = getBoard(boardId);
     if (!board) {
         console.error("Board not found!");
-        return;
+        return new Error("Board not found")
     }
 
     const todo = board.todos.find(todo => todo.id === id);
@@ -114,7 +131,7 @@ export const clearCompletedTodos = (boardId: number) => {
     const board = getBoard(boardId);
     if (!board) {
         console.error("Board not found!");
-        return;
+        return new Error("Board not found")
     }
 
     const remainingTodos = board.todos.filter(todo => !todo.completed);
@@ -142,7 +159,12 @@ export const getFilteredTodos = (boardId: number, filter: string): TodoItem[] =>
 }
 
 export function getPaginatedTodos(boardId: number, filter: string, page: number, limit: number) {
+   
     const board = getBoard(boardId);
+    //  console.log("boardId: ", boardId)
+    // console.log("filter: ", filter)
+    // console.log("page: ", page)
+    // console.log("limit: ", limit)
     if (!board) {
         console.error("Board not found!");
         return {

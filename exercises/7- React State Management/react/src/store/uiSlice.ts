@@ -24,12 +24,20 @@ interface PaginationState {
     itemsPerPage: number;
 }
 
+interface AppConfigState {
+    refetchInterval: number; // en milisegundos
+    uppercaseDescriptions: boolean;
+}
+
 interface UIState {
     notifications: Notification[];
     modal: ModalState;
     editing: EditingState;
     filter: filterType;
-    pagination: PaginationState
+    pagination: PaginationState;
+    currentBoardId: number;
+    isCreatingBoard: boolean;
+    config: AppConfigState;
 }
 
 const initialState: UIState = {
@@ -47,6 +55,12 @@ const initialState: UIState = {
     pagination: {
         currentPage: 1,
         itemsPerPage: 5
+    },
+    currentBoardId: 2,
+    isCreatingBoard: false,
+    config: {
+        refetchInterval: 10000, // 10 segundos por defecto
+        uppercaseDescriptions: false
     }
 }
 
@@ -97,6 +111,25 @@ export const uiSlice = createSlice({
         },
         setItemsPerPage: (state, action: PayloadAction<number>) => {
             state.pagination.itemsPerPage = action.payload;
+        },
+
+        startCreatingBoard: (state) => {
+            state.isCreatingBoard = true;
+        },
+        cancelCreatingBoard: (state) => {
+            state.isCreatingBoard = false;
+        },
+        setCurrentBoardId: (state, action: PayloadAction<number>) => {
+            state.currentBoardId = action.payload;
+            state.pagination.currentPage = 1;
+        },
+        
+        // Acciones para configuración global
+        setRefetchInterval: (state, action: PayloadAction<number>) => {
+            state.config.refetchInterval = action.payload;
+        },
+        setUppercaseDescriptions: (state, action: PayloadAction<boolean>) => {
+            state.config.uppercaseDescriptions = action.payload;
         }
     }
 });
@@ -110,7 +143,12 @@ export const {
     cancelEditing,
     setFilter,
     setCurrentPage,
-    setItemsPerPage
+    setItemsPerPage,
+    startCreatingBoard,
+    cancelCreatingBoard,
+    setCurrentBoardId,
+    setRefetchInterval,
+    setUppercaseDescriptions
 } = uiSlice.actions;
 
 export default uiSlice.reducer;

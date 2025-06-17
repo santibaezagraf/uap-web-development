@@ -1,17 +1,23 @@
 import type { TodoItem } from "../types";
 import { useToggleTodo, useDeleteTodo } from "../hooks/UseTodoMutations";
 import { addNotification, startEditing } from "../store/uiSlice";
-import { useAppDispatch } from "../store/hooks";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
 
 type ToDoItemProps = {
     todo: TodoItem;
 };
 
-export function ToDoItemWithContext({ todo }: ToDoItemProps) {
+export function ToDoItem({ todo }: ToDoItemProps) {
     const { id, text, completed } = todo;
     const toggleMutation = useToggleTodo();
     const deleteMutation = useDeleteTodo();
     const dispatch = useAppDispatch();
+    
+    // Obtener la configuración para mostrar texto en mayúsculas
+    const { uppercaseDescriptions } = useAppSelector(state => state.ui.config);
+    
+    // Aplicar transformación si es necesario
+    const displayText = uppercaseDescriptions ? text.toUpperCase() : text;
     
     const handleToggle = () => {
         toggleMutation.mutate(id);
@@ -27,7 +33,9 @@ export function ToDoItemWithContext({ todo }: ToDoItemProps) {
             message: `Task "${text}" deleted successfully!`,
             type: 'success' // , duration
         }))
-    };    const handleStartEditing = () => {
+    };    
+    
+    const handleStartEditing = () => {
         dispatch(startEditing(todo));
         // Esto hará que el componente AddToDo cambie a modo edición
     };
@@ -51,7 +59,7 @@ export function ToDoItemWithContext({ todo }: ToDoItemProps) {
                     completed ? 'line-through opacity-50 text-[rgb(158,151,151)]' : ''
                 }`}
             >
-                {text}
+                {displayText}
             </p>
 
             <button

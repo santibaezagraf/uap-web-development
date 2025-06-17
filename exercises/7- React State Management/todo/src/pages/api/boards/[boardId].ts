@@ -5,7 +5,6 @@ const parseFormData = async (request: Request) => {
     const formData = await request.formData();
     const action = formData.get("action")?.toString();
     const text = formData.get("text")?.toString();
-    // const id = formData.get("id")?.toString();
     return { action, text };	
 };
 
@@ -44,8 +43,10 @@ export const GET: APIRoute = async ({ request, redirect, params }) => {
 }
 
 export const DELETE: APIRoute = async ({ request, params, redirect }) => {
+    
     const contentType = request.headers.get("content-type");
-    const { id } = params;
+    const id = params.boardId ? parseInt(params.boardId, 10) : undefined;
+
     if (!id) {
         return new Response("Id is required", { status: 404 });
     }
@@ -61,6 +62,7 @@ export const DELETE: APIRoute = async ({ request, params, redirect }) => {
         }
 
         if (action === "deleteBoard") {
+            console.log("calling deleteBoard()")
             deleteBoard(Number(id));
         } else {
             return new Response("Invalid action", { status: 400 });
@@ -85,7 +87,7 @@ export const DELETE: APIRoute = async ({ request, params, redirect }) => {
 
 export const PATCH: APIRoute = async ({ request, params, redirect }) => {
     const contentType = request.headers.get("content-type");
-    const { id } = params;
+    const id  = params.boardId ? parseInt(params.boardId, 10) : undefined
     if (!id) {
         return new Response("Id is required", { status: 404 });
     }

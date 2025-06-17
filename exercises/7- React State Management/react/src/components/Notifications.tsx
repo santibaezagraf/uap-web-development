@@ -12,10 +12,10 @@ export function Notifications() {
     // const processedIdsRef = useRef<Set<string>>(new Set());
 
     const handleRemoveNotification = useCallback((id: string) => {
-      console.log(`Removing notification: ${id}`);
+      // console.log(`Removing notification: ${id}`);
 
       if (timeoutsRef.current[id]) {
-        console.log(`Clearing timeout for notification: ${id}`);
+        // console.log(`Clearing timeout for notification: ${id}`);
         clearTimeout(timeoutsRef.current[id]);
         delete timeoutsRef.current[id];
       }
@@ -26,19 +26,19 @@ export function Notifications() {
 
     useEffect(() => {
         
-        console.log("Current notifications:", notifications);
-        console.log("Current timeouts:", Object.keys(timeoutsRef.current));
+        // console.log("Current notifications:", notifications);
+        // console.log("Current timeouts:", Object.keys(timeoutsRef.current));
         // console.log("Processed IDs:", Array.from(processedIdsRef.current));
 
         notifications.forEach(notification => {
-          console.log(`Processing notification: ${notification.id} - ${notification.message}`);
+          // console.log(`Processing notification: ${notification.id} - ${notification.message}`);
 
-            console.log(`Adding notification ID to processed: ${notification.id}`);
+            // console.log(`Adding notification ID to processed: ${notification.id}`);
             // processedIdsRef.current.add(notification.id);
 
           if (!timeoutsRef.current[notification.id]) {
             timeoutsRef.current[notification.id] = setTimeout(() => {
-              console.log(`Timeout completed for notification: ${notification.id} - ${notification.message}`);
+              // console.log(`Timeout completed for notification: ${notification.id} - ${notification.message}`);
               handleRemoveNotification(notification.id);
 
               // clearTimeout(timeoutsRef.current[notification.id]);

@@ -18,11 +18,18 @@ const parseJson = async (
   };
 
 export const GET: APIRoute = async ({ request, redirect, params }) => {
+  console.log("GET TODOS")
   const contentType = request.headers.get("content-type");
+  const url = new URL(request.url);
+
   const boardId = params.boardId ? parseInt(params.boardId, 10) : undefined;
-  const filter = params.filter?.toString() || "all";
-  const page = params.page ? parseInt(params.page, 10) : 1;
-  const limit = params.limit ? parseInt(params.limit, 10) : 5;
+  const filter = url.searchParams.get('filter')?.toString() || "all";
+  const page = parseInt(url.searchParams.get('page') || '1', 10);
+  const limit = parseInt(url.searchParams.get('limit') || '5', 10);
+  // console.log("boardId: ", typeof boardId)
+  console.log("GET: APIRoute filter: ", filter)
+  // console.log("page: ", page)
+  // console.log("limit: ", limit)
 
   if (!boardId) {
     return new Response("Board ID is required", { status: 400 });
@@ -36,6 +43,7 @@ export const GET: APIRoute = async ({ request, redirect, params }) => {
     const paginatedTodos = getPaginatedTodos(boardId, filter, validPage, validLimit); // Se obtienen las tareas filtradas según el estado actual del filtro
 
     if (contentType === "application/json") {
+      console.log("DEVOLVIENDO JSON")
       return new Response(JSON.stringify(paginatedTodos), {
         status: 200,
         headers: { "Content-Type": "application/json" }
@@ -51,14 +59,20 @@ export const GET: APIRoute = async ({ request, redirect, params }) => {
 }
 
 
-export const POST: APIRoute = async ({ request, redirect }) => {
+export const POST: APIRoute = async ({ request, redirect, params }) => {
   const contentType = request.headers.get("content-type");
+  const boardId = parseInt(params.boardId as string || "1", 10);
+  console.log("boardId:", boardId)
+
 
   try {
     const data = contentType === "application/json" ? await request.json() : await request.formData();
     const action = data.action as string | undefined;
     const text = data.text as string | undefined;
-    const boardId = parseInt(data.boardId as string || "1", 10); // Se obtiene el ID del tablero
+    // const boardId = parseInt(data.boardId as string || "1", 10); // Se obtiene el ID del tablero
+
+    console.log("action:", action)
+    console.log("text:", text)
 
     if (!action || !boardId) {
       return new Response("Action and Board ID are required", { status: 400 });
@@ -66,8 +80,20 @@ export const POST: APIRoute = async ({ request, redirect }) => {
 
     if (action === "addBoard" && text) {
       addBoard(text); // Añade un nuevo tablero
-    } else if (action === "addTodo" && text) {
-      addTodo(boardId, text); // Añade una nueva tarea al array de tareas del tablero especificado
+    } 
+    else if (action === "addTodo" && text) 
+    {
+      try {
+        // Añade una nueva tarea al array de tareas del tablero especificado
+        await addTodo(boardId, text); 
+      } catch (err) {
+        console.error("Error adding todo:", err)
+        return new Response(JSON.stringify({ error: err instanceof Error ? err.message : "Failed to add todo" }), { 
+            status: 404, // O el código que sea apropiado
+            headers: { "Content-Type": "application/json" }
+        });
+      }
+      
     } else if (action === "clearCompleted") {
       clearCompletedTodos(boardId); // Elimina las tareas completadas del array de tareas del tablero especificado
     }
