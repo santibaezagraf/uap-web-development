@@ -21,6 +21,9 @@ function mapApiResponseToBook(item: any): Book {
     };
 }
 
+// Export for testing purposes only
+export { mapApiResponseToBook };
+
 export async function searchBooks(formData: FormData, startIndex: number = 0): Promise<{
     books: {
         items?: Book[];
@@ -55,10 +58,7 @@ export async function searchBooks(formData: FormData, startIndex: number = 0): P
 
         console.log(`Searching books with query: ${searchQuery}`);
         const response = await fetch(
-            `https://www.googleapis.com/books/v1/volumes?q=${searchQuery}&startIndex=${startIndex}&maxResults=10`,
-            {
-                cache: 'no-store'
-            }
+            `https://www.googleapis.com/books/v1/volumes?q=${searchQuery}&startIndex=${startIndex}&maxResults=10`
         );
 
         if (!response.ok) {
@@ -66,10 +66,13 @@ export async function searchBooks(formData: FormData, startIndex: number = 0): P
         }
         
         const data = await response.json();
-        console.log('raw API response:', data);
+        // console.log('raw API response:', data);
 
-        const books = data.items?.map(mapApiResponseToBook) || [];
+        const books = data.items?.map(await mapApiResponseToBook) || [];
         const totalItems = data.totalItems || 0;
+
+        console.log(`Found ${totalItems} books for query: ${searchQuery}`);
+        console.log(books);
 
         return {
             books: {
