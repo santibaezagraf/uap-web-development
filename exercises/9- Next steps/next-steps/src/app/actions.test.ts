@@ -67,7 +67,7 @@ describe("searchBooks", () => {
         formData.set("query", "Rowling");
         formData.set("searchType", "author");
 
-        (fetch as any).mockResolvedValue({
+        (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
         json: async () => ({ items: [], totalItems: 0 })
         });
@@ -84,7 +84,7 @@ describe("searchBooks", () => {
         formData.set("query", "Messi");
         formData.set("searchType", "title");
 
-        (fetch as any).mockResolvedValue({
+        (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
         json: async () => ({ items: [], totalItems: 0 })
         });
@@ -101,7 +101,7 @@ describe("searchBooks", () => {
         formData.set("query", "978-3-16-148410-0");
         formData.set("searchType", "isbn");
 
-        (fetch as any).mockResolvedValue({
+        (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
         json: async () => ({ items: [], totalItems: 0 })
         });

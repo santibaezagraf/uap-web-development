@@ -4,7 +4,24 @@ import { getReviewsByBookId, addReview, voteReviewById } from "@/lib/memoryDB";
 import type { Review, Book } from "@/lib/types";
 
 // Helper que mapea respuesta de la API a tipo Book
-function mapApiResponseToBook(item: any): Book {
+function mapApiResponseToBook(item: {
+    id: string;
+    volumeInfo: {
+        title?: string;
+        authors?: string[];
+        publishedDate?: string;
+        publisher?: string;
+        description?: string;
+        pageCount?: number;
+        categories?: string[];
+        averageRating?: number;
+        ratingsCount?: number;
+        imageLinks?: {
+            thumbnail?: string;
+        };
+        infoLink?: string;
+    };
+}): Book {
     return {
         id: item.id,
         title: item.volumeInfo.title || 'Unknown Title',

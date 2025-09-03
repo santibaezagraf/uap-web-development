@@ -2,7 +2,7 @@ import { randomUUID } from "crypto";
 import { Review } from "./types"
 
 // Simulación de una base de datos en memoria
-export let reviews: Review[] = []
+export const reviews: Review[] = []
 
 export function getReviewById(reviewId: string): Review | undefined {
     return reviews.find(review => review.id === reviewId);

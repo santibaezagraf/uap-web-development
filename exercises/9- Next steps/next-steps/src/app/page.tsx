@@ -184,7 +184,7 @@ export default function Home() {
             <div>
               {/* <h3 className="text-2xl font-semibold text-gray-800 mb-6">Results:</h3> */}
               <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-6">
-              {books.items.map((book: any, index: number) => (
+              {books.items.map((book: Book, index: number) => (
                 <div key={index} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-200">
                   <div className="flex h-full relative">
                     
