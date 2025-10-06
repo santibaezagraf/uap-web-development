@@ -1,12 +1,40 @@
-import { useReadContract } from 'wagmi';
-import { FAUCET_TOKEN_ABI, FAUCET_TOKEN_ADDRESS } from '../contracts/FaucetToken';
+import { useEffect, useState } from "react";
+import { useAccount } from "wagmi";
+import { getFaucetStatus } from "../services/api";
 
-export function FaucetUsersList() {
-    const { data: users, isLoading, error } = useReadContract({
-        address: FAUCET_TOKEN_ADDRESS,
-        abi: FAUCET_TOKEN_ABI,
-        functionName: 'getFaucetUsers',
-    });
+
+interface FaucetUsersListProps {
+    authToken: string | null;
+}
+
+export function FaucetUsersList({ authToken }: FaucetUsersListProps) {
+    const { address } = useAccount();
+    const [users, setUsers] = useState<string[] | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect (() => {
+        if (!address || !authToken) {
+            setUsers(null);
+            return;
+        }
+
+        const fetchUsers = async () => {
+            try {
+                setIsLoading(true);
+                const data = await getFaucetStatus(address, authToken);
+                setUsers(data.users);
+            } catch (err: any) {
+                setError(err);
+                setUsers(null);
+                console.error('Error fetching faucet users:', err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchUsers();
+    }, [address, authToken]);
 
     if (isLoading) {
         <div className="bg-white shadow-lg rounded-lg p-6">
@@ -23,7 +51,7 @@ export function FaucetUsersList() {
         return (
             <div className="bg-white shadow-lg rounded-lg p-6">
                 <h3 className="text-lg font-semibold mb-4">Faucet Users</h3>
-                <p className="text-red-600">Error loading users: {error.message}</p>
+                <p className="text-red-600">Error loading users: {error}</p>
             </div>
         )
     }

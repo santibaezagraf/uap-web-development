@@ -1,51 +1,87 @@
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi'
-import { FAUCET_TOKEN_ABI, FAUCET_TOKEN_ADDRESS } from '../contracts/FaucetToken';
+import { useAccount } from 'wagmi'
+import { claimTokens, type ClaimResponse } from '../services/api';
+import { useState } from 'react';
 
-export function FaucetClaim() {
-    const { address, isConnected } = useAccount();
+interface FaucetClaimProps {
+    authToken: string | null;
+    hasClaimed: boolean;
+    onClaimSuccess: () => void;
+}
 
-    // Verfificar si ya reclamó 
-    const { data: hasClaimed } = useReadContract({
-        address: FAUCET_TOKEN_ADDRESS,
-        abi: FAUCET_TOKEN_ABI,
-        functionName: 'hasAddressClaimed',
-        args: address ? [address] : undefined,
-        query: { enabled: !!address },
-    });
-
-    // Obtener cantidad del faucet
-    const { data: faucetAmount } = useReadContract({
-        address: FAUCET_TOKEN_ADDRESS,
-        abi: FAUCET_TOKEN_ABI,
-        functionName: 'getFaucetAmount',
-    });
-
-    // Hook para escribir al contrato
-    const {
-        writeContract,
-        data: hash,      
-        isPending,
-        error
-    } = useWriteContract();
-
-    //  Esperar confirmación de la transacción
-    const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
-        hash,
-    });
+export function FaucetClaim({ authToken, hasClaimed, onClaimSuccess }: FaucetClaimProps) {
+    const { address } = useAccount();
+    const [isClaiming, setIsClaiming] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [result, setResult] = useState<ClaimResponse | null>(null);
 
     const handleClaim = async () => {
+        if (!authToken) {
+            setError('You must be authenticated to claim tokens.');
+            return;
+        }
+
         try {
-            writeContract({
-                address: FAUCET_TOKEN_ADDRESS,
-                abi: FAUCET_TOKEN_ABI,
-                functionName: 'claimTokens',
-            });
-        } catch (error) {
-            console.error('Error claiming tokens:', error);
+            setIsClaiming(true);
+            setError(null);
+            setResult(null);
+
+            console.log('Claiming tokens with auth token:', authToken);
+            const response = await claimTokens(authToken);
+
+            setResult(response);
+            console.log('Tokens claimed successfully:', response);
+
+            onClaimSuccess?.();
+        } catch (err: any) {
+            console.error('Error claiming tokens:', err);
+            setError(err.message || 'Failed to claim tokens. Please try again later.');
+        } finally {
+            setIsClaiming(false);
         }
     }
 
-    if (!isConnected) {
+    // Verfificar si ya reclamó 
+    // const { data: hasClaimed } = useReadContract({
+    //     address: FAUCET_TOKEN_ADDRESS,
+    //     abi: FAUCET_TOKEN_ABI,
+    //     functionName: 'hasAddressClaimed',
+    //     args: address ? [address] : undefined,
+    //     query: { enabled: !!address },
+    // });
+
+    // // Obtener cantidad del faucet
+    // const { data: faucetAmount } = useReadContract({
+    //     address: FAUCET_TOKEN_ADDRESS,
+    //     abi: FAUCET_TOKEN_ABI,
+    //     functionName: 'getFaucetAmount',
+    // });
+
+    // // Hook para escribir al contrato
+    // const {
+    //     writeContract,
+    //     data: hash,      
+    //     isPending,
+    //     error
+    // } = useWriteContract();
+
+    // //  Esperar confirmación de la transacción
+    // const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+    //     hash,
+    // });
+
+    // const handleClaim = async () => {
+    //     try {
+    //         writeContract({
+    //             address: FAUCET_TOKEN_ADDRESS,
+    //             abi: FAUCET_TOKEN_ABI,
+    //             functionName: 'claimTokens',
+    //         });
+    //     } catch (error) {
+    //         console.error('Error claiming tokens:', error);
+    //     }
+    // }
+
+    if (!address || !authToken) {
         return null;
     }
 
@@ -66,58 +102,46 @@ export function FaucetClaim() {
             
             <div className="mb-6">
                 <p className="text-gray-700 mb-2">
-                You can claim  
-                    <span className="font-bold text-green-600">
-                        {faucetAmount}
-                    </span> FTK tokens for free!
+                    You can claim <span className="font-bold text-green-600">1,000,000</span> FTK tokens for free!
                 </p>
                 <p className="text-sm text-gray-500">
-                    Each address can only claim once. This operation will require a small gas fee.
+                    Each address can only claim once. The backend will handle the transaction.
                 </p>
             </div>
 
             <button
                 onClick={handleClaim}
-                disabled={isPending || isConfirming || hasClaimed}
+                disabled={isClaiming}
                 className={`w-full py-3 px-6 rounded-lg font-medium transition-colors ${
-                isPending || isConfirming
+                isClaiming
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     : 'bg-green-500 hover:bg-green-600 text-white'
                 }`}
             >
-                {isPending && 'Preparing Transaction...'}
-                {isConfirming && 'Confirming Transaction...'}
-                {!isPending && !isConfirming && 'Claim Tokens'}
+                {isClaiming ? '🔄 Claiming Tokens...' : '🎁 Claim Tokens'}
             </button>
 
-            {hash && (
-                <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                    <p className="text-sm text-blue-700 mb-2">Transaction submitted!</p>
+            {result && (
+                <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-green-800 font-medium mb-2">✅ Tokens claimed successfully!</p>
                     <a
-                        href={`https://sepolia.etherscan.io/tx/${hash}`}
+                        href={`https://sepolia.etherscan.io/tx/${result.txHash}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-600 hover:text-blue-800 underline text-sm break-all"
                     >
-                        View on Etherscan: {hash}
+                        View transaction: {result.txHash}
                     </a>
-                </div>
-            )}
-
-            {isConfirmed && (
-                <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-                    <p className="text-green-800 font-medium">✅ Tokens claimed successfully!</p>
-                    <p className="text-green-700 text-sm">Check your wallet balance.</p>
                 </div>
             )}
 
             {error && (
                 <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
                     <p className="text-red-800 font-medium">❌ Error:</p>
-                    <p className="text-red-700 text-sm">{error.message}</p>
+                    <p className="text-red-700 text-sm">{error}</p>
                 </div>
             )}
-            </div>
-    )
+        </div>
+    );
 }   
 

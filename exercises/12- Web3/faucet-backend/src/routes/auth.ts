@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { type Request, type Response } from 'express';
 import { SiweMessage } from 'siwe';
 import jwt from 'jsonwebtoken';
 import type { AuthMessage, AuthResponse, SignInRequest } from '../types';
@@ -20,7 +20,7 @@ setInterval(() => {
 }, 15 * 60 * 1000);
 
 // POST /auth/message - Generar mensaje SIWE
-router.post('/message', (req, res) => {
+router.post('/message', (req: Request, res: Response) => {
     try {
         const { address } = req.body;
         
@@ -50,14 +50,31 @@ router.post('/message', (req, res) => {
             expirationTime: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 minutos
         });
 
-        
+        const message = siweMessage.prepareMessage();
+
+        const response: AuthMessage = { 
+            message,
+            address: address.toLowerCase(),
+            nonce
+        };
+
+        res.json(response);
+    } catch (error) {
+        console.error('Error generating SIWE message:', error);
+        res.status(500).json({ 
+            error: 'Failed to generate SIWE message',
+            message: 'Internal Server Error' 
+        });
     }
 })
 
-//POST /auth/signin - Verificar firma y emitir JWT
-router.post('/signin', async (req, res) => {
+//POST /auth/signin - Verificar firma y generar JWT
+router.post('/signin', async (req: Request, res: Response) => {
     try {
+        console.log('Received /auth/signin request with body:', req.body);
+
         const { message, signature } = req.body as SignInRequest;
+
         if (!message || !signature) {
             return res.status(400).json({ 
                 error: 'Missing parameters',
@@ -65,26 +82,39 @@ router.post('/signin', async (req, res) => {
             });
         }
 
+        // Parsear mensaje SIWE
         const siweMessage = new SiweMessage(message);
         const address = siweMessage.address.toLowerCase();
 
-        const stored = nonceStore.get(address);
-        if (!stored) {
+        // Verificar nonce
+        const storedData = nonceStore.get(address);
+
+        if (!storedData) {
             return res.status(400).json({
                 error: 'Invalid request',
                 message: 'Nonce not found or expired'
             });
         }
-        if (stored.nonce !== siweMessage.nonce) {
+        if (storedData.nonce !== siweMessage.nonce) {
             return res.status(400).json({
                 error: 'Invalid nonce',
                 message: 'The nonce does not match the stored value'
             });
         }
-        await siweMessage.validate(signature);
+
+        // Verificar firma
+        const result = await siweMessage.verify({ signature });
+
+        if (!result.success) {
+            return res.status(400).json({
+                error: 'Invalid signature',
+                message: 'The provided signature is invalid'
+            });
+        }
 
         // Eliminar nonce usado
         nonceStore.delete(address);
+
         // Crear JWT
         const JWT_SECRET = process.env.JWT_SECRET;
         if (!JWT_SECRET) {
@@ -96,9 +126,9 @@ router.post('/signin', async (req, res) => {
         const token = jwt.sign(
             { address },
             JWT_SECRET,
-            { expiresIn: '1h' }
+            { expiresIn: '24h' }
         );
-        const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hora
+        const expiresAt = new Date(Date.now() + 60 * 60 * 1000 * 24).toISOString(); // 24 horas
 
         const response: AuthResponse = {
             token,
@@ -110,5 +140,10 @@ router.post('/signin', async (req, res) => {
     } catch (error) {
         console.error('Error in /auth/signin:', error);
         res.status(400).json({
-            error: 'Invalid signature',
+            error: 'Sign in failed',
             message: 'The provided signature is invalid or the message has expired'
+        });
+    }
+});
+
+export default router;

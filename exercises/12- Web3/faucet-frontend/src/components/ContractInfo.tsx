@@ -1,21 +1,22 @@
-import { useReadContract } from 'wagmi';
-import { FAUCET_TOKEN_ADDRESS, FAUCET_TOKEN_ABI } from '../contracts/FaucetToken';
+import { useEffect, useState } from 'react';
+import { getFaucetInfo } from '../services/api';
 
 export function ContractInfo() {
-    const { data: faucetAmount } = useReadContract({
-        address: FAUCET_TOKEN_ADDRESS,
-        abi: FAUCET_TOKEN_ABI,
-        functionName: 'getFaucetAmount',
-    });
+    const [info, setInfo] = useState<any>(null);
 
-    const { data: totalUsers  } = useReadContract({
-        address: FAUCET_TOKEN_ADDRESS,
-        abi: FAUCET_TOKEN_ABI,
-        functionName: 'getFaucetUsers',
-        // select: (data) => data?.length || 0,
-    });
+    useEffect(() => {
+        const fetchInfo = async () => {
+            try {
+                const data = await getFaucetInfo();
+                setInfo(data);
+            } catch (err) {
+                console.error('Error fetching faucet info:', err);
+            }
+        }
 
-    const totalUsersLength = totalUsers ? totalUsers.length : 0;
+        fetchInfo();
+    }, []);
+
 
     return (
         <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg p-6 mb-6">
@@ -25,13 +26,13 @@ export function ContractInfo() {
                 <div className="bg-white/10 rounded-lg p-3">
                     <p className="text-sm opacity-90">Tokens per Claim</p>
                     <p className="text-lg font-bold">
-                        {faucetAmount} FTK
+                        {info ? Number(info.faucetAmount).toLocaleString() : '1,000,000'} FTK
                     </p>
                 </div>
                 
                 <div className="bg-white/10 rounded-lg p-3">
                     <p className="text-sm opacity-90">Total Claimers</p>
-                    <p className="text-lg font-bold">{totalUsersLength}</p>
+                    <p className="text-lg font-bold">{info?.totalUsers || 0}</p>
                 </div>
                 
                 <div className="bg-white/10 rounded-lg p-3">
@@ -43,9 +44,9 @@ export function ContractInfo() {
             <div className="bg-white/10 rounded-lg p-3">
                 <p className="text-sm opacity-90 mb-1">Contract Address:</p>
                 <div className="flex items-center justify-between">
-                    <code className="text-xs break-all mr-2">{FAUCET_TOKEN_ADDRESS}</code>
+                    <code className="text-xs break-all mr-2">{info?.contractAddress}</code>
                     <a
-                        href={`https://sepolia.etherscan.io/address/${FAUCET_TOKEN_ADDRESS}`}
+                        href={`https://sepolia.etherscan.io/address/${info?.contractAddress}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="bg-white/20 hover:bg-white/30 px-3 py-1 rounded text-sm"
