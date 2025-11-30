@@ -19,10 +19,10 @@ export default function ChatPage() {
       {/* Header */}
       <div className="bg-gradient-to-r from-slate-800 to-slate-700 border-b border-slate-600 p-4 shadow-xl">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold text-white flex items-center gap-2">
-            🤖 Chatbot Inteligente
-          </h1>
-          <p className="text-slate-400 text-sm mt-1">Powered by OpenRouter & Vercel AI SDK</p>
+            <h1 className="text-3xl font-bold text-white flex items-center justify-center gap-2">
+            Chatbot Inteligente
+            </h1>
+          {/* <p className="text-slate-400 text-sm mt-1">Powered by OpenRouter & Vercel AI SDK</p> */}
         </div>
       </div>
 
@@ -116,12 +116,12 @@ export default function ChatPage() {
                 Enviando
               </span>
             ) : (
-              '📤 Enviar'
+              'Enviar'
             )}
           </button>
         </form>
         <p className="text-xs text-slate-500 mt-2 max-w-4xl mx-auto">
-          💡 Máximo 1000 caracteres por mensaje
+          Máximo 1000 caracteres por mensaje
         </p>
       </div>
     </div>

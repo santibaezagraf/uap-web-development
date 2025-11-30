@@ -58,7 +58,7 @@ export async function POST(req: Request) {
                 'X-Title': 'Chatbot Inteligente',
             },
             body: JSON.stringify({
-                model: 'gpt-3.5-turbo',
+                model: process.env.OPENROUTER_MODEL || 'gpt-3.5-turbo',
                 messages: sanitizedMessages,
                 stream: true,
                 temperature: 0.7,
