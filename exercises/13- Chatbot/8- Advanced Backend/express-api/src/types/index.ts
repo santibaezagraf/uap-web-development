@@ -22,7 +22,13 @@ export interface Todo {
     id: number;
     board_id: number;
     text: string;
+    description?: string;
     completed: boolean;
+    priority: 'low' | 'medium' | 'high';
+    category?: 'work' | 'personal' | 'shopping' | 'health' | 'other';
+    due_date?: string;
+    is_deleted: boolean;
+    deleted_at?: string;
     created_at: string;
     updated_at: string;
 }
@@ -62,7 +68,12 @@ export interface MutateBoardDto {
 }
 
 export interface MutateTodoDto {
-    text: string;
+    text?: string;
+    description?: string;
+    completed?: boolean;
+    priority?: 'low' | 'medium' | 'high';
+    category?: 'work' | 'personal' | 'shopping' | 'health' | 'other';
+    due_date?: string;
 }
 
 export interface ShareBoardDto {
@@ -88,6 +99,12 @@ export interface TodoQueryParams {
     page?: number;
     limit?: number;
     search?: string;
+    priority?: 'low' | 'medium' | 'high';
+    category?: 'work' | 'personal' | 'shopping' | 'health' | 'other';
+    completed?: boolean;
+    sort_by?: 'created_at' | 'due_date' | 'priority' | 'text';
+    sort_order?: 'asc' | 'desc';
+    include_deleted?: boolean;
 }
 
 // JWT Payload

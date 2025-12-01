@@ -9,7 +9,8 @@
     "build": "tsc",
     "test": "jest",
     "init-db": "ts-node src/scripts/init-db.ts",
-    "migrate:todos-per-page": "ts-node src/scripts/migrate-todos-per-page.ts"
+    "migrate:todos-per-page": "ts-node src/scripts/migrate-todos-per-page.ts",
+    "migrate:features": "ts-node src/scripts/migrate-add-features.ts"
   },
   "keywords": [],
   "author": "",

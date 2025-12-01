@@ -8,6 +8,7 @@ import { setCurrentBoardId, setCurrentPage } from '../store/uiSlice'
 import { useParams } from 'react-router-dom'
 import { useEffect } from 'react'
 import { SearchTodos } from '../components/SearchTodos'
+import { ChatBot } from '../components/ChatBot';
 
 
 export function Index() {    
@@ -29,6 +30,8 @@ export function Index() {
                     <FilterTasks onFilterChange={() => dispatch(setCurrentPage(1))}/>
                     <ToDoListWithContext />
                     <ClearCompletedWithContext />
+
+                    <ChatBot boardId={boardId ? parseInt(boardId, 10) : 0} />
 
                 </div>              
             <Notifications />

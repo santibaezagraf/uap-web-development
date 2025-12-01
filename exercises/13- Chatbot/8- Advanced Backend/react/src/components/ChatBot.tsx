@@ -1,6 +1,35 @@
 import { useState, useRef, useEffect } from 'react';
 import api from '../lib/api';
 
+// Función para sanitizar input del usuario
+const sanitizeInput = (input: string): string => {
+    return input
+        .trim()
+        .slice(0, 1000) // Limitar a 1000 caracteres
+        .replace(/[<>]/g, '') // Remover < y >
+        .replace(/javascript:/gi, '') // Remover javascript:
+        .replace(/on\w+\s*=/gi, ''); // Remover event handlers
+};
+
+// Función para validar input
+const validateInput = (input: string): { valid: boolean; error?: string } => {
+    const sanitized = input.trim();
+
+    if (!sanitized) {
+        return { valid: false, error: 'Por favor escribe un mensaje' };
+    }
+
+    if (sanitized.length > 1000) {
+        return { valid: false, error: 'El mensaje no puede exceder 1000 caracteres' };
+    }
+
+    if (sanitized.length < 2) {
+        return { valid: false, error: 'El mensaje debe tener al menos 2 caracteres' };
+    }
+
+    return { valid: true };
+};
+
 interface Message {
     id: string;
     role: 'user' | 'assistant';
@@ -29,19 +58,33 @@ export function ChatBot({ boardId }: ChatBotProps) {
         scrollToBottom();
     }, [messages]);
 
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        // Limitar en tiempo real a 1000 caracteres
+        if (value.length <= 1000) {
+            setInput(value);
+        }
+        setError(null); // Limpiar error cuando el usuario escribe
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!input.trim()) {
-            setError('Por favor escribe un mensaje');
+        // Validar input
+        const validation = validateInput(input);
+        if (!validation.valid) {
+            setError(validation.error || 'Entrada inválida');
             return;
         }
+
+        // Sanitizar input
+        const sanitizedInput = sanitizeInput(input);
 
         // Agregar mensaje del usuario
         const userMessage: Message = {
             id: Date.now().toString(),
             role: 'user',
-            content: input,
+            content: sanitizedInput,
             timestamp: new Date()
         };
 
@@ -58,24 +101,33 @@ export function ChatBot({ boardId }: ChatBotProps) {
                     content: m.content
                 })).concat({
                     role: 'user',
-                    content: input
+                    content: sanitizedInput
                 }),
                 boardId
             });
+
+            // Validar respuesta del servidor
+            if (!response.data || !response.data.message) {
+                throw new Error('Respuesta inválida del servidor');
+            }
 
             // Agregar respuesta del asistente
             const assistantMessage: Message = {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
-                content: response.data.message,
-                toolResults: response.data.toolResults,
+                content: String(response.data.message).slice(0, 5000), // Limitar respuesta
+                toolResults: Array.isArray(response.data.toolResults) ? response.data.toolResults : [],
                 timestamp: new Date()
             };
 
             setMessages(prev => [...prev, assistantMessage]);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Error al procesar el mensaje');
+            const errorMsg = err instanceof Error ? err.message : 'Error al procesar el mensaje';
+            setError(errorMsg);
             console.error('Chat error:', err);
+            
+            // Remover el mensaje del usuario si hay error
+            setMessages(prev => prev.slice(0, -1));
         } finally {
             setIsLoading(false);
         }
@@ -101,7 +153,9 @@ export function ChatBot({ boardId }: ChatBotProps) {
             <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 rounded-t-lg flex justify-between items-center">
                 <div>
                     <h3 className="font-bold text-lg">🤖 AI Assistant</h3>
-                    <p className="text-blue-100 text-xs">Gestiona tus tareas</p>
+                    <p className="text-blue-100 text-xs">
+                        {boardId > 0 ? `Tablero ${boardId}` : 'Gestor de tareas'}
+                    </p>
                 </div>
                 <button
                     onClick={() => setIsOpen(false)}
@@ -117,14 +171,30 @@ export function ChatBot({ boardId }: ChatBotProps) {
                 {messages.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-center">
                         <div className="text-4xl mb-2">💡</div>
-                        <p className="text-gray-600 text-sm font-medium">Bienvenido al asistente IA</p>
+                        <p className="text-gray-600 text-sm font-medium">
+                            {boardId > 0 
+                                ? `Asistente para el tablero ${boardId}` 
+                                : 'Gestor de tareas inteligente'
+                            }
+                        </p>
                         <p className="text-gray-400 text-xs mt-2">
-                            Ejemplos:
+                            {boardId > 0 ? 'Ejemplos:' : 'Ejemplo:'}
                         </p>
                         <ul className="text-gray-400 text-xs mt-2 space-y-1">
-                            <li>• "Crea una tarea"</li>
-                            <li>• "Marca como completada"</li>
-                            <li>• "Muestra estadísticas"</li>
+                            {boardId > 0 ? (
+                                <>
+                                    <li>• "Crea una tarea de comprar café"</li>
+                                    <li>• "Marca la primera tarea como completada"</li>
+                                    <li>• "Muestra mis tareas pendientes"</li>
+                                    <li>• "¿Cuántas tareas completé?"</li>
+                                </>
+                            ) : (
+                                <>
+                                    <li>• "Crea una tarea"</li>
+                                    <li>• "Marca como completada"</li>
+                                    <li>• "Muestra estadísticas"</li>
+                                </>
+                            )}
                         </ul>
                     </div>
                 ) : (
